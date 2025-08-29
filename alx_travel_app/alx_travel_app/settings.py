@@ -34,6 +34,15 @@ env = environ.Env(
 environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 
 
+# Celery settings
+CELERY_BROKER_URL = 'amqp://localhost'  # RabbitMQ
+CELERY_RESULT_BACKEND = 'rpc://'  # Store results in RPC (you can also use Redis if preferred)
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'UTC'
+
+
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/

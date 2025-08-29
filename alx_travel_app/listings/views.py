@@ -6,14 +6,23 @@ from django.http import JsonResponse
 from django.conf import settings
 import requests, uuid, json
 
+# 👇 import your Celery task
+from .tasks import send_booking_confirmation_email
+
 
 class ListingViewSet(viewsets.ModelViewSet):
     queryset = Listing.objects.all()
     serializer_class = ListingSerializer
 
+
 class BookingViewSet(viewsets.ModelViewSet):
     queryset = Booking.objects.all()
     serializer_class = BookingSerializer
+
+    def perform_create(self, serializer):
+        booking = serializer.save()
+        # Trigger Celery task immediately after booking is created
+        send_booking_confirmation_email.delay(booking.user.email, booking.id)
 
 
 # ---------------------------
@@ -93,7 +102,10 @@ def verify_payment(request):
             payment.status = "Completed"
             payment.transaction_id = resp_data["data"]["transaction_id"]
             payment.save()
-            # trigger Celery email task here
+
+            # ✅ Optionally, send another Celery email confirmation after payment success
+            send_booking_confirmation_email.delay(payment.email, payment.booking.id)
+
             return JsonResponse({"message": "Payment successful"}, status=200)
         else:
             payment.status = "Failed"
